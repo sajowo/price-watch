@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Price Watch – Panel śledzenia cen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --surface: #111827;
+      --surface2: #1a2235;
+      --surface3: #1f2a3d;
+      --border: #1f2d45;
+      --accent: #3b82f6;
+      --accent2: #6366f1;
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --text: #f1f5f9;
+      --muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 8px 16px;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .btn:hover {
+      background: var(--surface3);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-danger {
+      color: var(--red);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--red);
+    }
+
+    /* ── Hero / Top bar ── */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 32px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-logo {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff, #a5b4fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero-logo span {
+      -webkit-text-fill-color: initial;
+      font-size: 28px;
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    /* ── Search bar ── */
+    .search-hero {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .search-hero input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 15px;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-hero input:focus {
+      border-color: var(--accent);
+    }
+
+    .search-hero input::placeholder {
+      color: var(--muted);
+    }
+
+    .search-hero .btn-primary {
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* ── Product grid (homepage) ── */
+    .home-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .home-section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .home-section-title .count {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--surface2);
+      padding: 2px 10px;
+      border-radius: 20px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .product-tile {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .product-tile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .product-tile:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.12);
+    }
+
+    .product-tile:hover::before {
+      opacity: 1;
+    }
+
+    .tile-name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+
+    .tile-stats {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .tile-price-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .tile-price {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--green);
+    }
+
+    .tile-price.no-data {
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .tile-meta {
+      text-align: right;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .tile-meta div {
+      margin-bottom: 4px;
+    }
+
+    .tile-shops-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--surface2);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tile-delete {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      opacity: 0;
+      transition: all 0.15s;
+    }
+
+    .product-tile:hover .tile-delete {
+      opacity: 1;
+    }
+
+    .tile-delete:hover {
+      color: var(--red);
+    }
+
+    /* ── Product Detail View ── */
+    .detail-view {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 40px;
+    }
+
+    .detail-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .detail-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .detail-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .detail-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      margin-bottom: 12px;
+      transition: color 0.15s;
+    }
+
+    .detail-back:hover {
+      color: var(--accent);
+    }
+
+    .detail-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .detail-sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 20px 0;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    /* ── Price cards ── */
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      padding: 16px 0 12px;
+    }
+
+    .price-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .price-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      position: relative;
+      transition: all 0.15s;
+    }
+
+    .price-card:hover {
+      border-color: var(--border);
+      background: var(--surface2);
+    }
+
+    .price-card.is-lowest {
+      border-color: var(--green);
+    }
+
+    .price-card.is-lowest::after {
+      content: '🏆 Najniższa';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--green);
+      background: rgba(16, 185, 129, 0.1);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .card-shop {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .card-price {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .card-avail {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .avail-in {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--green);
+    }
+
+    .avail-out {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--red);
+    }
+
+    .avail-unknown {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--yellow);
+    }
+
+    .card-link {
+      display: block;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .card-link:hover {
+      text-decoration: underline;
+    }
+
+    /* ── Card action buttons ── */
+    .card-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .price-card:hover .card-actions {
+      opacity: 1;
+    }
+
+    .card-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .card-btn:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .card-btn.card-btn-danger:hover {
+      color: var(--red);
+      border-color: var(--red);
+    }
+
+    /* ── Chart ── */
+    .chart-section {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .chart-wrapper {
+      position: relative;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ── Period selector ── */
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .period-btns {
+      display: flex;
+      gap: 4px;
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .period-btn {
+      padding: 5px 12px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .period-btn:hover {
+      color: var(--text);
+    }
+
+    .period-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 24px 24px 8px;
+    }
+
+    .modal-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .modal-header p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .modal-body {
+      padding: 16px 24px;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+    }
+
+    .form-input::placeholder {
+      color: var(--muted);
+    }
+
+    .search-box {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ── Search results in modal ── */
+    .search-results {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface2);
+    }
+
+    .search-result {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .search-result:last-child {
+      border-bottom: none;
+    }
+
+    .search-result:hover {
+      background: var(--surface3);
+    }
+
+    .search-result input[type="checkbox"] {
+      margin-top: 3px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .search-result-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .search-result-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .search-result-url {
+      font-size: 11px;
+      color: var(--muted);
+      word-break: break-all;
+      margin-top: 2px;
+    }
+
+    .search-result-snippet {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .search-loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .manual-url-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state .icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      color: var(--text);
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    /* ── Spinner ── */
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+    }
+
+    /* ── Price change badge ── */
+    .price-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-top: 4px;
+    }
+
+    .price-change.up {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--red);
+    }
+
+    .price-change.down {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--green);
+    }
+
+    .price-change.neutral {
+      background: var(--surface2);
+      color: var(--muted);
+    }
+
+    /* ── History table ── */
+    .history-section {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .history-table th {
+      text-align: left;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .history-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .history-table tr:hover {
+      background: var(--surface2);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hero {
+        padding: 28px 16px;
+      }
+
+      .search-hero {
+        flex-direction: column;
+      }
+
+      .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .detail-header {
+        padding: 20px 16px;
+      }
+
+      .detail-view {
+        padding: 0 16px 40px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── MAIN APP ── -->
+  <div id="app"></div>
+
+  <!-- ── ADD PRODUCT MODAL ── -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Dodaj nowy produkt</h2>
+        <p>Wyszukaj produkt lub wklej link do sklepu ręcznie.</p>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nazwa produktu</label>
+          <div class="search-box">
+            <input class="form-input" id="productName" placeholder="np. Sony WH-1000XM5, iPhone 16 Pro..."
+              onkeydown="if(event.key==='Enter'){event.preventDefault();doSearch()}" />
+            <button class="btn btn-primary" onclick="doSearch()" id="searchBtn">🔍 Szukaj sklepy</button>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:6px">Wpisz nazwę i kliknij "Szukaj sklepy" — znajdziemy
+            oferty w internecie</p>
+        </div>
+        <div class="form-group" id="searchResultsGroup" style="display:none">
+          <label class="form-label">Znalezione sklepy <span id="searchCount" style="color:var(--accent)"></span></label>
+          <div id="searchResults" class="search-results"></div>
+        </div>
+        <div class="manual-url-section">
+          <label class="form-label">Lub dodaj link ręcznie</label>
+          <div class="search-box">
+            <input class="form-input" id="manualUrl" placeholder="https://sklep.pl/produkt..." />
+            <button class="btn" onclick="addManualUrl()">Dodaj</button>
+          </div>
+          <div id="manualUrls" style="margin-top: 8px;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeAddModal()">Anuluj</button>
+        <button class="btn btn-primary" onclick="submitNewProduct()" id="submitBtn">Zacznij śledzić</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EDIT URL MODAL ── -->
+  <div class="modal-overlay" id="editUrlModal">
+    <div class="modal" style="max-width:540px">
+      <div class="modal-header">
+        <h2>🔗 Zmień link sklepu</h2>
+        <p>Otwórz stronę sklepu, znajdź właściwy produkt i wklej tutaj link.</p>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Obecny link</label>
+          <div
+            style="font-size:12px;color:var(--muted);word-break:break-all;padding:8px 12px;background:var(--surface2);border-radius:8px"
+            id="editOldUrlDisplay"></div>
+        </div>
+        <div style="text-align:center;margin:4px 0">
+          <button class="btn btn-primary" onclick="window.open(document.getElementById('editOldUrl').value, '_blank')"
+            style="font-size:13px">
+            🌐 Otwórz stronę w przeglądarce
+          </button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nowy link (do konkretnego produktu)</label>
+          <input class="form-input" id="editNewUrl" placeholder="https://sklep.pl/konkretny-produkt..." />
+        </div>
+        <input type="hidden" id="editOldUrl" />
+        <input type="hidden" id="editItemId" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeEditUrlModal()">Anuluj</button>
+        <button class="btn btn-primary" onclick="submitUrlChange()" id="editSubmitBtn">💾 Zapisz nowy link</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── State ─────────────────────────────────────────────────────
+    let allItems = [];
+    let currentView = 'home'; // 'home' or 'detail'
+    let selectedItemId = null;
+    let selectedSites = [];
+    let manualUrlsList = [];
+    let chartInstance = null;
+    let chartPeriod = null; // null = all, default
+
+    const PALETTE = [
+      '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+      '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#a855f7'
+    ];
+
+    const API = '';
+
+    // ── Helpers ────────────────────────────────────────────────────
+    function fmtPrice(p) {
+      if (p == null) return '—';
+      return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN', minimumFractionDigits: 2 }).format(p);
+    }
+
+    function fmtDate(ts) {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' '
+        + d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function availClass(a) {
+      if (a === 'in_stock') return 'avail-in';
+      if (a === 'out_of_stock') return 'avail-out';
+      return 'avail-unknown';
+    }
+
+    function availLabel(a) {
+      if (a === 'in_stock') return '✅ Dostępny';
+      if (a === 'out_of_stock') return '❌ Niedostępny';
+      return '❓ Nieznana';
+    }
+
+    function hostname(url) {
+      try { return new URL(url).hostname.replace('www.', ''); } catch { return url; }
+    }
+
+    function fmtPriceChange(change) {
+      if (change == null || change === 0) return '<span style="color:var(--muted)">— brak zmian</span>';
+      const arrow = change > 0 ? '↗' : '↘';
+      const color = change > 0 ? 'var(--red)' : 'var(--green)';
+      const sign = change > 0 ? '+' : '';
+      return `<span style="color:${color}">${arrow} ${sign}${fmtPrice(change)}</span>`;
+    }
+
+    // ── Data loading ──────────────────────────────────────────────
+    async function loadItems() {
+      try {
+        const resp = await fetch(`${API}/api/items?t=${Date.now()}`);
+        allItems = await resp.json();
+      } catch (e) {
+        console.error('Failed to load items:', e);
+        allItems = [];
+      }
+      render();
+    }
+
+    // ── Router ────────────────────────────────────────────────────
+    function render() {
+      if (currentView === 'detail' && selectedItemId) {
+        renderDetailView();
+      } else {
+        renderHome();
+      }
+    }
+
+    function goHome() {
+      currentView = 'home';
+      selectedItemId = null;
+      history.pushState({ view: 'home' }, '', '#');
+      render();
+    }
+
+    function goToProduct(itemId) {
+      currentView = 'detail';
+      selectedItemId = itemId;
+      history.pushState({ view: 'detail', itemId }, '', '#product/' + itemId);
+      render();
+    }
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.view === 'detail' && e.state.itemId) {
+        currentView = 'detail';
+        selectedItemId = e.state.itemId;
+      } else {
+        currentView = 'home';
+        selectedItemId = null;
+      }
+      render();
+    });
+
+    // Init from URL hash on page load
+    function initFromHash() {
+      const hash = window.location.hash;
+      if (hash.startsWith('#product/')) {
+        const itemId = hash.replace('#product/', '');
+        currentView = 'detail';
+        selectedItemId = itemId;
+      }
+    }
+
+    // ── HOME VIEW ─────────────────────────────────────────────────
+    function renderHome() {
+      const app = document.getElementById('app');
+
+      if (allItems.length === 0) {
+        app.innerHTML = `
+          <div class="hero">
+            <div class="hero-logo"><span>🎯</span> Price Watch</div>
+            <div class="hero-sub">Śledź ceny produktów w polskich sklepach internetowych</div>
+            <div class="search-hero">
+              <input type="text" placeholder="Wpisz nazwę produktu aby rozpocząć śledzenie..." id="heroSearch"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();openAddWithQuery()}" />
+              <button class="btn btn-primary" onclick="openAddWithQuery()">🔍 Szukaj</button>
+            </div>
+          </div>
+          <div class="home-container">
+            <div class="empty-state">
+              <div class="icon">📦</div>
+              <h3>Brak śledzonych produktów</h3>
+              <p>Wyszukaj produkt powyżej lub kliknij przycisk poniżej aby dodać ręcznie.</p>
+              <button class="btn btn-primary" style="margin-top:16px" onclick="openAddModal()">+ Dodaj produkt</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      app.innerHTML = `
+        <div class="hero">
+          <div class="hero-logo"><span>🎯</span> Price Watch</div>
+          <div class="hero-sub">Śledź ceny produktów w polskich sklepach internetowych</div>
+          <div class="search-hero">
+            <input type="text" placeholder="Wpisz nazwę produktu aby rozpocząć śledzenie..." id="heroSearch"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();openAddWithQuery()}" />
+            <button class="btn btn-primary" onclick="openAddWithQuery()">🔍 Szukaj</button>
+          </div>
+        </div>
+        <div class="home-container">
+          <div class="home-section-title">
+            📊 Śledzone produkty
+            <span class="count">${allItems.length}</span>
+            <div style="flex:1"></div>
+            <button class="btn" onclick="refreshPrices()" style="font-size:12px">🔄 Odśwież ceny</button>
+          </div>
+          <div class="product-grid">
+            ${allItems.map(renderProductTile).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderProductTile(item) {
+      const minPrice = item.min_price;
+      const maxPrice = item.max_price;
+      const shopCount = item.shop_count || 0;
+      const created = fmtDate(item.created);
+
+      // Find last checked time
+      const sites = item.sites || [];
+      const lastChecked = sites.reduce((max, s) => {
+        if (s.last_checked && (!max || s.last_checked > max)) return s.last_checked;
+        return max;
+      }, null);
+
+      return `
+        <div class="product-tile" onclick="goToProduct('${item.id}')">
+          <button class="tile-delete" onclick="event.stopPropagation();deleteItem('${item.id}')" title="Usuń produkt">✕</button>
+          <div class="tile-name">${item.name}</div>
+          <div class="tile-stats">
+            <div>
+              <div class="tile-price-label">Najniższa cena</div>
+              <div class="tile-price ${minPrice == null ? 'no-data' : ''}">${minPrice != null ? fmtPrice(minPrice) : 'Brak danych'}</div>
+            </div>
+            <div class="tile-meta">
+              ${maxPrice != null ? `<div>max: ${fmtPrice(maxPrice)}</div>` : ''}
+              <div class="tile-shops-count">🏪 ${shopCount} sklepów</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openAddWithQuery() {
+      const q = document.getElementById('heroSearch')?.value?.trim();
+      openAddModal();
+      if (q) {
+        document.getElementById('productName').value = q;
+        setTimeout(() => doSearch(), 100);
+      }
+    }
+
+    // ── DETAIL VIEW ───────────────────────────────────────────────
+    function renderDetailView() {
+      const item = allItems.find(i => i.id === selectedItemId);
+      if (!item) return goHome();
+
+      const app = document.getElementById('app');
+      const sites = item.sites || [];
+      const prices = sites.map(s => s.current_price).filter(p => p != null);
+      const minPrice = prices.length ? Math.min(...prices) : null;
+      const maxPrice = prices.length ? Math.max(...prices) : null;
+      const avgPrice = prices.length ? (prices.reduce((a, b) => a + b, 0) / prices.length) : null;
+
+      const lastChecked = sites.reduce((max, s) => {
+        if (s.last_checked && (!max || s.last_checked > max)) return s.last_checked;
+        return max;
+      }, null);
+
+      app.innerHTML = `
+        <div class="detail-header">
+          <button class="detail-back" onclick="goHome()">← Powrót do listy produktów</button>
+          <div class="detail-top">
+            <div>
+              <h1>${item.name}</h1>
+              <div class="detail-sub">
+                ${item.shop_count} sklepów · SKU: ${item.sku_hint || '—'} · Dodano: ${fmtDate(item.created)}
+              </div>
+              <div class="detail-sub" style="margin-top:4px">
+                ${lastChecked ? 'Ostatnia aktualizacja: ' + fmtDate(lastChecked) : 'Brak danych'}
+              </div>
+            </div>
+            <div class="header-actions">
+              <button class="btn" onclick="refreshPrices()">🔄 Odśwież ceny</button>
+              <button class="btn btn-danger" onclick="deleteItem('${item.id}')">🗑 Usuń</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-view">
+          <!-- Stats -->
+          <div class="stats-bar">
+            <div class="stat-card">
+              <div class="stat-label">Najniższa cena</div>
+              <div class="stat-value" style="color:var(--green)">${fmtPrice(minPrice)}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Najwyższa cena</div>
+              <div class="stat-value" style="color:var(--red)">${fmtPrice(maxPrice)}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Średnia cena</div>
+              <div class="stat-value">${fmtPrice(avgPrice)}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Zmiana ceny</div>
+              <div class="stat-value">${fmtPriceChange(item.price_change)}</div>
+            </div>
+          </div>
+
+          <!-- Price cards -->
+          <h3 class="section-title">Ceny w sklepach</h3>
+          <div class="price-grid">
+            ${sites.map(site => renderPriceCard(site, item.id, minPrice)).join('')}
+          </div>
+
+          <!-- Chart -->
+          <div class="chart-section">
+            <div class="chart-header">
+              <h3 class="section-title" style="padding:0;margin:0">Historia cen</h3>
+              <div class="period-btns">
+                <button class="period-btn ${chartPeriod === 1 ? 'active' : ''}" onclick="setChartPeriod(1)">24h</button>
+                <button class="period-btn ${chartPeriod === 3 ? 'active' : ''}" onclick="setChartPeriod(3)">3 dni</button>
+                <button class="period-btn ${chartPeriod === 7 ? 'active' : ''}" onclick="setChartPeriod(7)">7 dni</button>
+                <button class="period-btn ${chartPeriod === 14 ? 'active' : ''}" onclick="setChartPeriod(14)">2 tyg.</button>
+                <button class="period-btn ${chartPeriod === 30 ? 'active' : ''}" onclick="setChartPeriod(30)">miesiąc</button>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="priceChart"></canvas>
+              <div class="chart-legend" id="chartLegend"></div>
+            </div>
+          </div>
+
+          <!-- History table -->
+          <div class="history-section">
+            <h3 class="section-title" style="padding:0;margin:0 0 16px 0">📋 Dziennik zmian cen</h3>
+            <div id="historyTable"></div>
+          </div>
+        </div>
+      `;
+
+      renderChart(sites);
+      renderHistoryTable(sites);
+    }
+
+    function renderPriceCard(site, itemId, minPrice) {
+      const isLowest = site.current_price != null && site.current_price === minPrice;
+      const priceStr = site.current_price != null ? fmtPrice(site.current_price) : '—';
+      const aClass = availClass(site.availability || 'unknown');
+      const aLabel = availLabel(site.availability || 'unknown');
+      const errStr = site.error ? `<div style="font-size:11px;color:var(--red);margin-top:4px">⚠ ${site.error}</div>` : '';
+      const changeStr = site.price_change != null && site.price_change !== 0
+        ? `<div class="price-change ${site.price_change > 0 ? 'up' : 'down'}">${site.price_change > 0 ? '↗' : '↘'} ${site.price_change > 0 ? '+' : ''}${fmtPrice(site.price_change)}</div>`
+        : '';
+
+      return `
+        <div class="price-card ${isLowest ? 'is-lowest' : ''}">
+          <div class="card-shop">${site.name || hostname(site.url)}</div>
+          <div class="card-price">${priceStr}</div>
+          ${changeStr}
+          <span class="card-avail ${aClass}">${aLabel}</span>
+          ${errStr}
+          <a class="card-link" href="${site.url}" target="_blank">${hostname(site.url)} ↗</a>
+          <div class="card-actions">
+            <button class="card-btn" onclick="openEditUrlModal('${itemId}', '${encodeURIComponent(site.url)}')">🔗 Zmień link</button>
+            <button class="card-btn card-btn-danger" onclick="removeSite('${itemId}', '${encodeURIComponent(site.url)}')">✕ Usuń</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── Chart ─────────────────────────────────────────────────────
+    function renderChart(sites) {
+      const canvas = document.getElementById('priceChart');
+      const legend = document.getElementById('chartLegend');
+      if (!canvas) return;
+
+      const allTs = new Set();
+      const shopData = {};
+
+      sites.forEach(site => {
+        const records = site.history || [];
+        if (records.length === 0) return;
+        const name = site.name || hostname(site.url);
+
+        // Filter by period
+        let filtered = records;
+        if (chartPeriod != null) {
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - chartPeriod);
+          filtered = records.filter(r => new Date(r.timestamp) >= cutoff);
+        }
+        if (filtered.length === 0) return;
+
+        shopData[name] = filtered;
+        filtered.forEach(r => allTs.add(r.timestamp));
+      });
+
+      if (allTs.size === 0) {
+        canvas.parentElement.innerHTML = `
+          <div class="empty-state" style="padding:40px">
+            <div class="icon">📊</div>
+            <h3>Brak historii cen</h3>
+            <p>Poczekaj na kilka aktualizacji aby zobaczyć wykres.</p>
+          </div>`;
+        return;
+      }
+
+      const sortedTs = [...allTs].sort();
+      const labels = sortedTs.map(ts => {
+        const d = new Date(ts);
+        return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }) + ' '
+          + d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+      });
+
+      const datasets = [];
+      legend.innerHTML = '';
+      let ci = 0;
+
+      Object.entries(shopData).forEach(([name, records]) => {
+        const color = PALETTE[ci++ % PALETTE.length];
+        const dataMap = {};
+        records.forEach(r => { if (r.price != null) dataMap[r.timestamp] = r.price; });
+        const data = sortedTs.map(ts => dataMap[ts] ?? null);
+        if (data.every(d => d === null)) return;
+
+        datasets.push({
+          label: name, data,
+          borderColor: color,
+          backgroundColor: color + '18',
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          spanGaps: true,
+          fill: false,
+        });
+
+        legend.innerHTML += `
+          <div class="legend-item">
+            <div class="legend-dot" style="background:${color}"></div>
+            <span>${name}</span>
+          </div>`;
+      });
+
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(canvas, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1a2235',
+              borderColor: '#1f2d45',
+              borderWidth: 1,
+              titleColor: '#e2e8f0',
+              bodyColor: '#94a3b8',
+              padding: 12,
+              callbacks: {
+                label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? fmtPrice(ctx.parsed.y) : '—'}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: '#1f2d45' }, ticks: { color: '#64748b', font: { size: 11 }, maxTicksLimit: 8 } },
+            y: {
+              grid: { color: '#1f2d45' },
+              ticks: {
+                color: '#64748b', font: { size: 11 },
+                callback: v => new Intl.NumberFormat('pl-PL').format(v) + ' zł'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ── Chart period ───────────────────────────────────────────────
+    function setChartPeriod(days) {
+      chartPeriod = days;
+      if (selectedItemId) renderDetailView();
+    }
+
+    // ── History table ─────────────────────────────────────────────
+    function renderHistoryTable(sites) {
+      const container = document.getElementById('historyTable');
+      if (!container) return;
+
+      // Collect all history records from all sites with shop name
+      const allRecords = [];
+      sites.forEach(site => {
+        const name = site.name || hostname(site.url);
+        (site.history || []).forEach(r => {
+          if (r.price != null) {
+            allRecords.push({ ...r, shop: name });
+          }
+        });
+      });
+
+      if (allRecords.length === 0) {
+        container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">Brak historii do wyświetlenia</div>';
+        return;
+      }
+
+      // Sort by timestamp descending (newest first)
+      allRecords.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+      // Take last 30
+      const recent = allRecords.slice(0, 30);
+
+      // Build price-change per shop to track deltas
+      const shopPriceMap = {};
+      // Process all records chronologically for each shop to compute changes
+      const shopHistory = {};
+      sites.forEach(site => {
+        const name = site.name || hostname(site.url);
+        const records = (site.history || []).filter(r => r.price != null);
+        shopHistory[name] = records;
+      });
+
+      // For each recent record, find the previous record for that shop
+      const rows = recent.map(rec => {
+        const records = shopHistory[rec.shop] || [];
+        const idx = records.findIndex(r => r.timestamp === rec.timestamp);
+        let change = null;
+        if (idx > 0) {
+          change = rec.price - records[idx - 1].price;
+        }
+        return { ...rec, change };
+      });
+
+      container.innerHTML = `
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Sklep</th>
+              <th>Cena</th>
+              <th>Zmiana</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => {
+        let changeHtml = '<span style="color:var(--muted)">—</span>';
+        if (r.change != null && r.change !== 0) {
+          const arrow = r.change > 0 ? '↗' : '↘';
+          const color = r.change > 0 ? 'var(--red)' : 'var(--green)';
+          const sign = r.change > 0 ? '+' : '';
+          changeHtml = `<span style="color:${color};font-weight:600">${arrow} ${sign}${fmtPrice(r.change)}</span>`;
+        }
+        return `
+                <tr>
+                  <td>${fmtDate(r.timestamp)}</td>
+                  <td>${r.shop}</td>
+                  <td style="font-weight:700">${fmtPrice(r.price)}</td>
+                  <td>${changeHtml}</td>
+                </tr>
+              `;
+      }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // ── Edit URL modal ────────────────────────────────────────────
+    function openEditUrlModal(itemId, encodedUrl) {
+      const url = decodeURIComponent(encodedUrl);
+      document.getElementById('editOldUrl').value = url;
+      document.getElementById('editItemId').value = itemId;
+      document.getElementById('editOldUrlDisplay').textContent = url;
+      document.getElementById('editNewUrl').value = '';
+      document.getElementById('editUrlModal').classList.add('show');
+      document.getElementById('editNewUrl').focus();
+    }
+
+    function closeEditUrlModal() {
+      document.getElementById('editUrlModal').classList.remove('show');
+    }
+
+    async function submitUrlChange() {
+      const oldUrl = document.getElementById('editOldUrl').value;
+      const newUrl = document.getElementById('editNewUrl').value.trim();
+      const itemId = document.getElementById('editItemId').value;
+
+      if (!newUrl) { alert('Wklej nowy link do produktu'); return; }
+      if (!newUrl.startsWith('http')) { alert('Link musi zaczynać się od http:// lub https://'); return; }
+
+      const btn = document.getElementById('editSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Zapisuję...';
+
+      try {
+        const resp = await fetch(`${API}/api/items/${itemId}/sites`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ old_url: oldUrl, new_url: newUrl }),
+        });
+        const data = await resp.json();
+        if (data.error) {
+          alert('Błąd: ' + data.error);
+        } else {
+          closeEditUrlModal();
+          await loadItems();
+        }
+      } catch (e) {
+        alert('Błąd: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '💾 Zapisz nowy link';
+      }
+    }
+
+    // ── Actions ───────────────────────────────────────────────────
+    async function refreshPrices() {
+      const btn = event.target || document.querySelector('button[onclick="refreshPrices()"]');
+      if (btn.disabled) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Sprawdzam...';
+
+      try {
+        await fetch(`${API}/api/check`, { method: 'POST' });
+        btn.innerHTML = '<span class="spinner"></span> Oczekiwanie...';
+
+        // Rozpocznij odpytywanie o status
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusResp = await fetch(`${API}/api/status`);
+            const statusData = await statusResp.json();
+
+            if (!statusData.checking) {
+              clearInterval(pollInterval);
+              btn.disabled = false;
+              btn.innerHTML = '🔄 Odśwież ceny';
+              loadItems();
+            }
+          } catch (err) {
+            console.error('Błąd podczas odpytywania o status:', err);
+            clearInterval(pollInterval);
+            btn.disabled = false;
+            btn.innerHTML = '🔄 Odśwież ceny';
+          }
+        }, 3000);
+
+      } catch (e) {
+        btn.disabled = false;
+        btn.innerHTML = '🔄 Odśwież ceny';
+        alert('Błąd: ' + e.message);
+      }
+    }
+
+    async function deleteItem(itemId) {
+      if (!confirm('Na pewno usunąć ten produkt?')) return;
+      try {
+        await fetch(`${API}/api/items/${itemId}`, { method: 'DELETE' });
+        if (selectedItemId === itemId) {
+          currentView = 'home';
+          selectedItemId = null;
+        }
+        await loadItems();
+      } catch (e) { alert('Błąd: ' + e.message); }
+    }
+
+    async function removeSite(itemId, encodedUrl) {
+      const url = decodeURIComponent(encodedUrl);
+      if (!confirm(`Usunąć sklep ${hostname(url)}?`)) return;
+      try {
+        await fetch(`${API}/api/items/${itemId}/sites`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        await loadItems();
+      } catch (e) { alert('Błąd: ' + e.message); }
+    }
+
+    // ── Add product modal ─────────────────────────────────────────
+    function openAddModal() {
+      selectedSites = [];
+      manualUrlsList = [];
+      document.getElementById('productName').value = '';
+      document.getElementById('searchResults').innerHTML = '';
+      document.getElementById('searchResultsGroup').style.display = 'none';
+      document.getElementById('manualUrls').innerHTML = '';
+      document.getElementById('addModal').classList.add('show');
+      document.getElementById('productName').focus();
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('show');
+    }
+
+    async function doSearch() {
+      const q = document.getElementById('productName').value.trim();
+      if (!q) return;
+
+      const resultsGroup = document.getElementById('searchResultsGroup');
+      const resultsDiv = document.getElementById('searchResults');
+      resultsGroup.style.display = 'block';
+      resultsDiv.innerHTML = '<div class="search-loading"><span class="spinner"></span> Szukam sklepów...</div>';
+      document.getElementById('searchCount').textContent = '';
+
+      try {
+        const resp = await fetch(`${API}/api/search?q=${encodeURIComponent(q)}`);
+        const data = await resp.json();
+
+        if (!data.results || data.results.length === 0) {
+          resultsDiv.innerHTML = '<div class="search-loading">Brak wyników. Spróbuj innego zapytania.</div>';
+          return;
+        }
+
+        document.getElementById('searchCount').textContent = `(${data.results.length} wyników)`;
+        selectedSites = [];
+
+        resultsDiv.innerHTML = data.results.map((r, i) => `
+          <label class="search-result">
+            <input type="checkbox" data-idx="${i}" onchange="toggleSearchResult(${i}, this.checked)"
+              data-url="${r.url}" data-title="${r.title.replace(/"/g, '&quot;')}" />
+            <div class="search-result-info">
+              <div class="search-result-title">${r.title}</div>
+              <div class="search-result-url">${r.url}</div>
+              ${r.snippet ? `<div class="search-result-snippet">${r.snippet}</div>` : ''}
+            </div>
+          </label>
+        `).join('');
+      } catch (e) {
+        resultsDiv.innerHTML = `<div class="search-loading" style="color:var(--red)">Błąd wyszukiwania: ${e.message}</div>`;
+      }
+    }
+
+    function toggleSearchResult(idx, checked) {
+      if (checked) {
+        const cb = document.querySelector(`[data-idx="${idx}"]`);
+        selectedSites.push({ url: cb.dataset.url, name: cb.dataset.title });
+      } else {
+        const cb = document.querySelector(`[data-idx="${idx}"]`);
+        selectedSites = selectedSites.filter(s => s.url !== cb.dataset.url);
+      }
+    }
+
+    function addManualUrl() {
+      const input = document.getElementById('manualUrl');
+      const url = input.value.trim();
+      if (!url || !url.startsWith('http')) { alert('Podaj poprawny URL'); return; }
+      manualUrlsList.push(url);
+      input.value = '';
+      document.getElementById('manualUrls').innerHTML = manualUrlsList.map((u, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;color:var(--muted)">
+          <span style="flex:1;word-break:break-all">${u}</span>
+          <button class="btn" style="padding:2px 8px;font-size:11px" onclick="removeManualUrl(${i})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function removeManualUrl(idx) {
+      manualUrlsList.splice(idx, 1);
+      addManualUrl.call ? document.getElementById('manualUrls').innerHTML = manualUrlsList.map((u, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;color:var(--muted)">
+          <span style="flex:1;word-break:break-all">${u}</span>
+          <button class="btn" style="padding:2px 8px;font-size:11px" onclick="removeManualUrl(${i})">✕</button>
+        </div>
+      `).join('') : null;
+    }
+
+    async function submitNewProduct() {
+      const name = document.getElementById('productName').value.trim();
+      if (!name) { alert('Podaj nazwę produktu'); return; }
+
+      const allSites = [
+        ...selectedSites.map(s => ({ url: s.url, name: s.name })),
+        ...manualUrlsList.map(u => ({ url: u, name: hostname(u) })),
+      ];
+
+      if (allSites.length === 0) { alert('Dodaj co najmniej jeden sklep'); return; }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Dodaję...';
+
+      try {
+        const resp = await fetch(`${API}/api/items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, sites: allSites }),
+        });
+        const data = await resp.json();
+        if (data.error) {
+          alert('Błąd: ' + data.error);
+        } else {
+          closeAddModal();
+          selectedItemId = data.id;
+          currentView = 'detail';
+          await loadItems();
+        }
+      } catch (e) {
+        alert('Błąd: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Zacznij śledzić';
+      }
+    }
+
+    // ── Init ──────────────────────────────────────────────────────
+    initFromHash();
+    loadItems();
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,34 @@
+{
+    "manifest_version": 3,
+    "name": "🎯 Price Watch",
+    "version": "2.0",
+    "description": "Monitoruje ceny produktów w polskich sklepach internetowych. Obsługuje wiele produktów z historią cen.",
+    "permissions": [
+        "alarms",
+        "storage",
+        "notifications"
+    ],
+    "host_permissions": [
+        "http://localhost:8765/*"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Price Watch – Monitor cen",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'; connect-src http://localhost:8765"
+    }
+}

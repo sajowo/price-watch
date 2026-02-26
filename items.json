@@ -1,0 +1,109 @@
+[
+  {
+    "id": "rossignol-arcade82",
+    "name": "Rossignol ARCADE82 LTD 176cm",
+    "sku_hint": "RROFY08",
+    "length_hint": 176,
+    "created": "2026-02-18T12:00:00Z",
+    "sites": [
+      {
+        "url": "https://adventuresports.pl/products/zestaw-rossignol-arcade-82-ltd-retail-xpress-xpress-11-gw-b83-black-orange-rrofy08",
+        "parser": "shopify",
+        "name": "AdventureSports.pl",
+        "sku_hint": "RROFY08"
+      },
+      {
+        "url": "https://ski4you.pl/products/narty-arcade-82-rossignol",
+        "parser": "shopify",
+        "name": "Ski4You.pl",
+        "sku_hint": "RROFY08",
+        "notes": "RAOFY01 – podobny model, wariant 176 dostępny"
+      },
+      {
+        "url": "https://skiracecenter.pl/rossignol/12723-narty-rossignol-arcade-82-xpress-xpress-11-gripwalk-2026.html",
+        "parser": "skiracecenter",
+        "name": "SkiRaceCenter.pl",
+        "sku_hint": "RROFY08"
+      },
+      {
+        "url": "https://www.intersport.pl/narty-rossignol-arcade82-ltd-xpress-11-rrofy08-niebieski.html",
+        "parser": "playwright_generic",
+        "name": "Intersport.pl",
+        "sku_hint": "RROFY08"
+      },
+      {
+        "url": "https://8a.pl/narty-rossignol-arcade-82-grey-wiazania-xpress-11-gw",
+        "parser": "playwright_generic",
+        "name": "8a.pl",
+        "sku_hint": "RROFY08"
+      },
+      {
+        "url": "https://www.skiwebshop.pl/rossignol-arcade-82-xpress-11-gw-2025-2026-narty-unisex-rossrrofy01-000",
+        "parser": "generic",
+        "name": "SkiWebShop.pl",
+        "sku_hint": "RROFY08",
+        "notes": "RROFY01 – podobny model"
+      },
+      {
+        "url": "https://www.deporvillage.pl/narty-rossignol-arcade-82-2026-plus-wiazania-xpress-11-gw-b83-szary-czarny?queryID=8234346be601ad4e3db7b9b0887d8760",
+        "parser": "playwright_generic",
+        "name": "Deporvillage.pl",
+        "sku_hint": "RROFY08",
+        "notes": "RROFY01 – podobny model, wysyłka z Hiszpanii"
+      },
+      {
+        "url": "https://www.outdoorxl.pl/rossignol-arcade-82.html",
+        "parser": "generic",
+        "name": "OutdoorXL.pl",
+        "sku_hint": "RROFY08"
+      },
+      {
+        "url": "https://www.ceneo.pl/192517543",
+        "parser": "ceneo",
+        "name": "Ceneo.pl (agregator)",
+        "sku_hint": "RROFY08",
+        "notes": "Agregator – najniższa cena z wielu sklepów"
+      },
+      {
+        "url": "https://e-katalog.pl/ROSSIGNOL-ARCADE-82-176--2025-2026-.htm",
+        "parser": "generic",
+        "name": "E-Katalog.pl (agregator)",
+        "sku_hint": "RROFY08",
+        "notes": "Agregator"
+      }
+    ]
+  },
+  {
+    "id": "rtx-5060",
+    "name": "rtx 5060",
+    "sku_hint": "",
+    "created": "2026-02-23T01:40:36.029983+00:00",
+    "sites": [
+      {
+        "url": "https://www.x-kom.pl/p/1332824-karta-graficzna-nvidia-msi-geforce-rtx-5060-ventus-2x-oc-8gb-gddr7-dlss4.html",
+        "name": "Karty graficzne NVIDIA GeForce RTX 5060 - x-kom.pl",
+        "parser": "playwright_generic"
+      },
+      {
+        "url": "https://www.komputronik.pl/product/967962/karta-graficzna-asus-geforce-rtx-5060-dual-oc-8gb-dlss-4.html",
+        "name": "Karty graficzne GeForce RTX 5060 - sklep Komputronik.pl",
+        "parser": "generic"
+      },
+      {
+        "url": "https://www.morele.net/karta-graficzna-msi-geforce-rtx-5060-ventus-2x-oc-8gb-gddr7-dlss4-15233914/",
+        "name": "Karty graficzne RTX 5060 - Sklep, Opinie, Ceny w Morele.net",
+        "parser": "generic"
+      },
+      {
+        "url": "https://www.mediaexpert.pl/komputery-i-tablety/podzespoly-komputerowe/karty-graficzne/karta-graficzna-asus-dual-geforce-rtx-5060-oc-edition-8gb-dlss-4",
+        "name": "GeForce RTX 5060 - karty graficzne - Media Expert",
+        "parser": "playwright_generic"
+      },
+      {
+        "url": "https://www.neonet.pl/karty-graficzne/msi-geforce-rtx-5060-gaming-oc-8gb-gddr7-dlss4.html",
+        "name": "GeForce RTX 5060 - karty graficzne Nvidia w NEONET",
+        "parser": "playwright_generic"
+      }
+    ]
+  }
+]

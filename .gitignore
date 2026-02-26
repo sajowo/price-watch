@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Data files (user-specific, regenerated automatically)
+state.json
+history.json
+sites.json
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

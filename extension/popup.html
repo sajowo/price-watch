@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Price Watch</title>
+    <!-- Chart.js bundled locally – no external CDN -->
+    <script src="chart.min.js"></script>
+    <style>
+        :root {
+            --bg: #0a0d14;
+            --surface: #111827;
+            --surface2: #1a2235;
+            --border: #1f2d45;
+            --accent: #3b82f6;
+            --green: #10b981;
+            --red: #ef4444;
+            --yellow: #f59e0b;
+            --muted: #64748b;
+            --text: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            width: 420px;
+            min-height: 160px;
+            max-height: 580px;
+            overflow-y: auto;
+        }
+
+        body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        body::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .header-icon {
+            font-size: 20px;
+        }
+
+        .header-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #e2e8f0;
+            line-height: 1.3;
+            margin-bottom: 4px;
+        }
+
+        .product-select {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .product-select:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .product-select:focus {
+            border-color: var(--accent);
+        }
+
+        .product-select option {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        .refresh-btn {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
+            border-radius: 7px;
+            padding: 5px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(59, 130, 246, 0.25);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        /* ── Stats ── */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1px;
+            background: var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat {
+            background: var(--surface);
+            padding: 9px 12px;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-value.green {
+            color: var(--green);
+        }
+
+        .stat-value.blue {
+            color: #60a5fa;
+        }
+
+        .stat-sub {
+            font-size: 9px;
+            color: var(--muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ── Chart ── */
+        .chart-section {
+            padding: 10px 12px 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chart-title {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .no-chart {
+            font-size: 10px;
+            color: var(--muted);
+            text-align: center;
+            padding: 14px 0;
+        }
+
+        /* ── Shop list ── */
+        .shops-section {
+            padding: 6px 0;
+        }
+
+        .section-label {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 0 12px 5px;
+        }
+
+        .shop-row {
+            display: flex;
+            align-items: center;
+            padding: 7px 12px;
+            gap: 8px;
+            border-bottom: 1px solid rgba(31, 45, 69, 0.4);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.1s;
+        }
+
+        .shop-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .shop-row:last-child {
+            border-bottom: none;
+        }
+
+        .shop-rank {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            width: 18px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .shop-rank.gold {
+            color: #f59e0b;
+        }
+
+        .shop-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .shop-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #e2e8f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .shop-tags {
+            display: flex;
+            gap: 3px;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 9px;
+            font-weight: 600;
+            padding: 1px 5px;
+            border-radius: 4px;
+        }
+
+        .tag.sku {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .tag.var {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+        }
+
+        .tag.agg {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--yellow);
+        }
+
+        .tag.err {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+        }
+
+        .shop-price {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .price-val {
+            font-size: 13px;
+            font-weight: 800;
+            color: #f1f5f9;
+        }
+
+        .price-val.no-price {
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        .price-currency {
+            font-size: 9px;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        .price-avail {
+            font-size: 9px;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        .price-avail.green {
+            color: var(--green);
+        }
+
+        .price-avail.red {
+            color: var(--red);
+        }
+
+        /* ── Loading / Error ── */
+        .loading,
+        .error-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 36px 20px;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .error-icon {
+            font-size: 28px;
+        }
+
+        .error-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .error-msg {
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .error-msg code {
+            background: var(--surface2);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: #a5b4fc;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            padding: 7px 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-time {
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        .open-dashboard {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--accent);
+            text-decoration: none;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+        }
+
+        .open-dashboard:hover {
+            color: #93c5fd;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-left">
+            <div class="header-icon">🎯</div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="header-title">Price Watch</div>
+                <select class="product-select" id="productSelect">
+                    <option value="">Ładowanie produktów...</option>
+                </select>
+            </div>
+        </div>
+        <button class="refresh-btn" id="refreshBtn">⟳ Odśwież</button>
+    </div>
+
+    <div class="stats" id="stats" style="display:none">
+        <div class="stat">
+            <div class="stat-label">Najtaniej</div>
+            <div class="stat-value green" id="sBest">—</div>
+            <div class="stat-sub" id="sBestShop">—</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Średnia</div>
+            <div class="stat-value blue" id="sAvg">—</div>
+            <div class="stat-sub">ze sklepów z ceną</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Trend</div>
+            <div class="stat-value" id="sTrend" style="font-size:13px">—</div>
+            <div class="stat-sub" id="sTrendSub">—</div>
+        </div>
+    </div>
+
+    <div class="chart-section" id="chartSection" style="display:none">
+        <div class="chart-title">Historia cen (PLN)</div>
+        <div id="chartContainer">
+            <div class="no-chart">Brak historii – uruchom skrypt kilka razy</div>
+        </div>
+    </div>
+
+    <div class="shops-section" id="shopsSection" style="display:none">
+        <div class="section-label">Aktualne ceny</div>
+        <div id="shopList"></div>
+    </div>
+
+    <div class="loading" id="loadingState">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Pobieranie cen…</div>
+    </div>
+
+    <div class="error-state" id="errorState" style="display:none">
+        <div class="error-icon">⚠️</div>
+        <div class="error-title">Brak danych z serwera</div>
+        <div class="error-msg">
+            Upewnij się że działa lokalny serwer:<br>
+            <code>python3 -m http.server 8765</code><br>
+            w folderze <code>price_watch</code>
+        </div>
+    </div>
+
+    <div class="footer" id="footer" style="display:none">
+        <div class="footer-time" id="footerTime">—</div>
+        <button class="open-dashboard" id="openDash">Pełny dashboard ↗</button>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
