@@ -375,6 +375,13 @@ class APIHandler(SimpleHTTPRequestHandler):
         if item_id in existing_ids:
             item_id = f"{item_id}-{int(datetime.now().timestamp()) % 10000}"
 
+        # Auto-detect parser and name for each site
+        for site in sites:
+            if not site.get("parser"):
+                site["parser"] = _guess_parser(site["url"])
+            if not site.get("name"):
+                site["name"] = _extract_domain(site["url"])
+
         new_item = {
             "id": item_id,
             "name": name,

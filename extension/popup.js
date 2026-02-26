@@ -139,13 +139,25 @@ function renderChart(item) {
     const container = document.getElementById('chartContainer');
     const sites = item.sites || [];
 
-    // Build history from sites
+    // Build history from sites, deduplicating consecutive same-price records
     const shopsWithData = sites
         .filter(site => {
             const history = site.history || [];
             return history.filter(r => r.price != null).length >= 1;
         })
-        .map(site => [site.name || hostname(site.url), site.history || []]);
+        .map(site => {
+            const name = site.name || hostname(site.url);
+            const raw = (site.history || []).filter(r => r.price != null);
+            // Keep only records where price changed from previous
+            const deduped = [];
+            for (let i = 0; i < raw.length; i++) {
+                if (i === 0 || raw[i].price !== raw[i - 1].price || i === raw.length - 1) {
+                    deduped.push(raw[i]);
+                }
+            }
+            return [name, deduped];
+        })
+        .filter(([, recs]) => recs.length >= 1);
 
     if (shopsWithData.length === 0) {
         container.innerHTML = '<div class="no-chart">Brak historii – uruchom skrypt kilka razy</div>';
@@ -154,7 +166,10 @@ function renderChart(item) {
 
     const allTs = new Set();
     shopsWithData.forEach(([, recs]) => recs.forEach(r => allTs.add(r.timestamp)));
-    const sortedTs = [...allTs].sort();
+
+    // Limit to last 3 days
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const sortedTs = [...allTs].sort().filter(ts => ts >= threeDaysAgo);
     const labels = sortedTs.map(ts => {
         const d = new Date(ts);
         return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })
@@ -169,8 +184,9 @@ function renderChart(item) {
             data: sortedTs.map(ts => dataMap[ts] ?? null),
             borderColor: PALETTE[i % PALETTE.length],
             backgroundColor: 'transparent',
-            borderWidth: 2,
-            pointRadius: 3,
+            borderWidth: 1.5,
+            pointRadius: 0,
+            pointHitRadius: 6,
             tension: 0.3,
             spanGaps: true,
         };
@@ -186,10 +202,21 @@ function renderChart(item) {
         data: { labels, datasets },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: '#94a3b8',
+                        font: { size: 9 },
+                        boxWidth: 10,
+                        boxHeight: 2,
+                        padding: 6,
+                        usePointStyle: false,
+                    }
+                },
                 tooltip: {
                     backgroundColor: '#1a2235',
                     borderColor: '#1f2d45',
@@ -208,6 +235,7 @@ function renderChart(item) {
                     ticks: { color: '#64748b', font: { size: 9 }, maxTicksLimit: 5 }
                 },
                 y: {
+                    beginAtZero: false,
                     grid: { color: '#1f2d45' },
                     ticks: {
                         color: '#64748b', font: { size: 9 },

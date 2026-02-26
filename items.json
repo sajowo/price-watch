@@ -105,5 +105,38 @@
         "parser": "playwright_generic"
       }
     ]
+  },
+  {
+    "id": "iiyama-g-master-gb2471hs-b1-24-pl",
+    "name": "iiyama G-MASTER GB2471HS-B1 24 pl",
+    "sku_hint": "",
+    "created": "2026-02-26T02:46:50.838600+00:00",
+    "sites": [
+      {
+        "url": "https://iiyama-sklep.pl/1738-monitory-gamingowe-g-master-red-eagle-iiyama-g-master-gb2471hs-b1-red-eagle-24-ips-led-240hz-03ms-2xhdmi-displayport-adaptive-gsync-black-tuner-4948570126392.html",
+        "name": "iiyama G-Master GB2471HS-B1 Red Eagle 24\" IPS LED ... - iiyama-sklep.pl",
+        "parser": "generic"
+      },
+      {
+        "url": "https://www.x-kom.pl/p/1370359-monitor-led-24-235-264-iiyama-g-master-gb2471hs-b1-red-eagle.html",
+        "name": "iiyama G-Master GB2471HS-B1 Red Eagle - x-kom.pl",
+        "parser": "playwright_generic"
+      },
+      {
+        "url": "https://www.komputronik.pl/product/989055/monitor-iiyama-g-master-gb2471hs-b1-red-eagle-240hz-full-hd-fast-ips-23-8-.html",
+        "name": "iiyama G-Master GB2471HS-B1 Red Eagle - Komputronik",
+        "parser": "generic"
+      },
+      {
+        "url": "https://www.mediaexpert.pl/komputery-i-tablety/monitory-led/monitor-iiyama-g-master-gb2471hs-b1-23-8-1920x1080px-ips-240hz-0-3-ms-mprt",
+        "name": "IIYAMA G-Master GB2471HS-B1 23.8\" 1920x1080px IPS 240Hz 0.3 ms [MPRT ...",
+        "parser": "playwright_generic"
+      },
+      {
+        "url": "https://www.neonet.pl/monitory/iiyama-g-master-gb2471hs-b1-red-eagle.html",
+        "name": "Monitor IIYAMA G-Master GB2471HS-B1 Red Eagle - Neonet",
+        "parser": "playwright_generic"
+      }
+    ]
   }
 ]

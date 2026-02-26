@@ -1122,35 +1122,46 @@ def _notify_ntfy(title: str, body: str) -> None:
 
 def send_notifications(changes: list[dict]) -> None:
     """
-    Wysyła powiadomienia o obniżkach cen.
-    Powiadomienie macOS – zawsze (gdy jest obniżka).
-    E-mail – tylko gdy skonfigurowane zmienne środowiskowe.
+    Wysyła powiadomienia o zmianach cen (obniżki i podwyżki).
+    Powiadomienie macOS – zawsze.
+    ntfy push – gdy skonfigurowany PRICE_WATCH_NTFY_TOPIC.
+    E-mail – gdy skonfigurowane zmienne środowiskowe.
     """
-    price_drops = [
+    price_changes = [
         ch for ch in changes
         if ch.get("price_changed")
         and ch["result"].price is not None
         and ch.get("old_price") is not None
-        and ch["result"].price < ch["old_price"]
     ]
 
-    if not price_drops:
+    if not price_changes:
         return
 
+    drops = [ch for ch in price_changes if ch["result"].price < ch["old_price"]]
+    increases = [ch for ch in price_changes if ch["result"].price > ch["old_price"]]
+
     lines = []
-    for ch in price_drops:
+    for ch in price_changes:
         r: ScrapeResult = ch["result"]
-        diff = ch["old_price"] - r.price
-        pct  = diff / ch["old_price"] * 100
+        diff = r.price - ch["old_price"]
+        pct = abs(diff) / ch["old_price"] * 100
+        arrow = "📉" if diff < 0 else "📈"
+        sign = "" if diff < 0 else "+"
         lines.append(
-            f"{r.name}: {_fmt_price(ch['old_price'])} → {_fmt_price(r.price)}"
-            f" (-{pct:.1f}%)"
+            f"{arrow} {r.name}: {_fmt_price(ch['old_price'])} → {_fmt_price(r.price)}"
+            f" ({sign}{diff:.0f} zł, {pct:.1f}%)"
         )
 
-    title = f"🎿 Obniżka ceny! ({len(price_drops)} sklep{'y' if len(price_drops) > 1 else ''})"
-    body  = "\n".join(lines)
+    if drops and not increases:
+        title = f"📉 Obniżka ceny! ({len(drops)} sklep{'y' if len(drops) > 1 else ''})"
+    elif increases and not drops:
+        title = f"📈 Podwyżka ceny! ({len(increases)} sklep{'y' if len(increases) > 1 else ''})"
+    else:
+        title = f"💰 Zmiany cen! ({len(drops)} ↓ / {len(increases)} ↑)"
 
-    log.info("Wysyłam powiadomienia o %d obniżce/ach", len(price_drops))
+    body = "\n".join(lines)
+
+    log.info("Wysyłam powiadomienia o %d zmianie/ach cen", len(price_changes))
     _notify_macos(title, body)
     _notify_ntfy(title, body)
     _notify_email(f"[Price Watch] {title}", body)
