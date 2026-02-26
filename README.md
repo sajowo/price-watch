@@ -120,6 +120,47 @@ Click **🔗 Zmień link** on any store card in the detail view to update its UR
 python3 api.py --port 9000
 ```
 
+## Browser Extension
+
+An optional Chrome extension gives you quick access to prices from a popup without opening the full dashboard.
+
+### Installation
+
+1. Open Chrome and go to `chrome://extensions`
+2. Enable **Developer mode** (toggle in the top-right corner)
+3. Click **Load unpacked**
+4. Select the `extension/` folder from this project
+5. The 🎯 Price Watch icon appears in your toolbar
+
+> **Note:** The extension connects to `http://localhost:8765`, so make sure the server is running.
+
+### Features
+
+- Product switcher dropdown
+- Mini stats (lowest price, average, trend)
+- Price history chart (last 3 days)
+- Ranked shop list with prices and availability
+- One-click refresh and link to full dashboard
+
+## Push Notifications (ntfy)
+
+Get push notifications on your phone when prices change — powered by [ntfy.sh](https://ntfy.sh).
+
+### Setup
+
+1. Install the **ntfy** app on your [iPhone](https://apps.apple.com/app/ntfy/id1625396347) or [Android](https://play.google.com/store/apps/details?id=io.heckel.ntfy)
+2. Subscribe to your topic in the app (e.g. `price-watch-66831faf`)
+3. Set the topic in `start.sh`:
+   ```bash
+   export PRICE_WATCH_NTFY_TOPIC="price-watch-66831faf"
+   ```
+4. Start the server with `./start.sh`
+
+When a price changes during an automatic or manual refresh, you'll receive a push notification like:
+
+> 📉 **Obniżka ceny!**  
+> Morele.net: 1 399 zł → 1 369 zł (-30 zł, 2.1%)
+
 ## Requirements
 
 - **Python 3.9+**
