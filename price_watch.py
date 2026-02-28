@@ -1021,13 +1021,6 @@ def detect_and_report_changes(
                 "old_avail": None,
             })
         elif price_changed or avail_changed:
-            # Alert tylko jeśli wariant lub SKU potwierdzone
-            if not r.variant_confirmed and not r.sku_confirmed:
-                log.info(
-                    "[%s] Zmiana wykryta, ale wariant/SKU niepewny – pomijam alert",
-                    r.name
-                )
-                continue
             changes.append({
                 "type": "change",
                 "result": r,

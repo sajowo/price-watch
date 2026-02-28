@@ -38,7 +38,7 @@ SITES_FILE = BASE_DIR / "sites.json"
 STATE_FILE = BASE_DIR / "state.json"
 HISTORY_FILE = BASE_DIR / "history.json"
 PRICE_WATCH = BASE_DIR / "price_watch.py"
-AUTO_CHECK_INTERVAL = 30  # minutes
+AUTO_CHECK_INTERVAL = 15  # minutes
 
 
 # ---------------------------------------------------------------------------
@@ -546,14 +546,22 @@ def _auto_scheduler():
     """Background thread that runs price check every AUTO_CHECK_INTERVAL minutes."""
     global is_checking
     log.info("🕐 Auto-scheduler uruchomiony (co %d min)", AUTO_CHECK_INTERVAL)
+    # First check after 60s so user can verify it works
+    first_run = True
     while True:
-        time.sleep(AUTO_CHECK_INTERVAL * 60)
-        if is_checking:
-            log.info("Auto-scheduler: sprawdzanie już trwa, pomijam")
-            continue
-        log.info("Auto-scheduler: uruchamiam sprawdzanie cen")
-        is_checking = True
-        _run_price_check()
+        wait = 60 if first_run else AUTO_CHECK_INTERVAL * 60
+        first_run = False
+        time.sleep(wait)
+        try:
+            if is_checking:
+                log.info("Auto-scheduler: sprawdzanie już trwa, pomijam")
+                continue
+            log.info("Auto-scheduler: uruchamiam sprawdzanie cen")
+            is_checking = True
+            _run_price_check()
+        except Exception as e:
+            log.error("Auto-scheduler: błąd: %s", e)
+            is_checking = False
 
 
 # ---------------------------------------------------------------------------
