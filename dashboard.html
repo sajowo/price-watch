@@ -8,6 +8,8 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Price Watch – Panel śledzenia cen</title>
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230f172a'/><path d='M18 14l16-2a3 3 0 012.2.9L50.8 27.5a3 3 0 010 4.2L36.7 45.8a3 3 0 01-4.2 0L17.9 31.2A3 3 0 0117 29V17a3 3 0 011-3z' fill='%231e293b' stroke='%233b82f6' stroke-width='2'/><circle cx='25' cy='23' r='3' fill='%233b82f6'/><path d='M28 32l6-4 4 3 6-7' stroke='%2310b981' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M41 24l3 0 0 3' stroke='%2310b981' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
@@ -694,6 +696,33 @@
       gap: 8px;
     }
 
+    .region-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      padding: 0 10px;
+      cursor: pointer;
+      outline: none;
+      min-width: 130px;
+      transition: border-color 0.15s;
+    }
+
+    .region-select:hover {
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .region-select:focus {
+      border-color: var(--accent);
+    }
+
+    .region-select option {
+      background: var(--surface);
+      color: var(--text);
+    }
+
     /* ── Search results in modal ── */
     .search-results {
       max-height: 300px;
@@ -913,10 +942,20 @@
           <div class="search-box">
             <input class="form-input" id="productName" placeholder="np. Sony WH-1000XM5, iPhone 16 Pro..."
               onkeydown="if(event.key==='Enter'){event.preventDefault();doSearch()}" />
+            <select class="region-select" id="searchRegion">
+              <option value="pl-pl" selected>🇵🇱 Polska</option>
+              <option value="de-de">🇩🇪 Niemcy</option>
+              <option value="gb-en">🇬🇧 UK</option>
+              <option value="us-en">🇺🇸 USA</option>
+              <option value="fr-fr">🇫🇷 Francja</option>
+              <option value="es-es">🇪🇸 Hiszpania</option>
+              <option value="cz-cs">🇨🇿 Czechy</option>
+              <option value="">🌍 Wszystkie</option>
+            </select>
             <button class="btn btn-primary" onclick="doSearch()" id="searchBtn">🔍 Szukaj sklepy</button>
           </div>
           <p style="font-size:11px;color:var(--muted);margin-top:6px">Wpisz nazwę i kliknij "Szukaj sklepy" — znajdziemy
-            oferty w internecie</p>
+            oferty w wybranym kraju</p>
         </div>
         <div class="form-group" id="searchResultsGroup" style="display:none">
           <label class="form-label">Znalezione sklepy <span id="searchCount" style="color:var(--accent)"></span></label>
@@ -1300,64 +1339,45 @@
       const legend = document.getElementById('chartLegend');
       if (!canvas) return;
 
-      const allTs = new Set();
-      const shopData = {};
+      // Determine cutoff date
+      let cutoff = null;
+      if (chartPeriod != null) {
+        cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - chartPeriod);
+      }
+
+      const datasets = [];
+      legend.innerHTML = '';
+      let ci = 0;
+      let hasData = false;
 
       sites.forEach(site => {
         const records = site.history || [];
         if (records.length === 0) return;
         const name = site.name || hostname(site.url);
-
-        // Filter by period
-        let filtered = records;
-        if (chartPeriod != null) {
-          const cutoff = new Date();
-          cutoff.setDate(cutoff.getDate() - chartPeriod);
-          filtered = records.filter(r => new Date(r.timestamp) >= cutoff);
-        }
-        if (filtered.length === 0) return;
-
-        shopData[name] = filtered;
-        filtered.forEach(r => allTs.add(r.timestamp));
-      });
-
-      if (allTs.size === 0) {
-        canvas.parentElement.innerHTML = `
-          <div class="empty-state" style="padding:40px">
-            <div class="icon">📊</div>
-            <h3>Brak historii cen</h3>
-            <p>Poczekaj na kilka aktualizacji aby zobaczyć wykres.</p>
-          </div>`;
-        return;
-      }
-
-      const sortedTs = [...allTs].sort();
-      const labels = sortedTs.map(ts => {
-        const d = new Date(ts);
-        return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }) + ' '
-          + d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
-      });
-
-      const datasets = [];
-      legend.innerHTML = '';
-      let ci = 0;
-
-      Object.entries(shopData).forEach(([name, records]) => {
         const color = PALETTE[ci++ % PALETTE.length];
-        const dataMap = {};
-        records.forEach(r => { if (r.price != null) dataMap[r.timestamp] = r.price; });
-        const data = sortedTs.map(ts => dataMap[ts] ?? null);
-        if (data.every(d => d === null)) return;
+
+        // Build {x, y} data points, filtered by period
+        const points = [];
+        records.forEach(r => {
+          if (r.price == null) return;
+          const ts = new Date(r.timestamp);
+          if (cutoff && ts < cutoff) return;
+          points.push({ x: ts.getTime(), y: r.price });
+        });
+
+        if (points.length === 0) return;
+        hasData = true;
 
         datasets.push({
-          label: name, data,
+          label: name,
+          data: points,
           borderColor: color,
           backgroundColor: color + '18',
-          borderWidth: 2.5,
-          pointRadius: 3,
+          borderWidth: 2,
+          pointRadius: points.length < 50 ? 3 : 1,
           pointHoverRadius: 5,
           tension: 0.3,
-          spanGaps: true,
           fill: false,
         });
 
@@ -1368,14 +1388,29 @@
           </div>`;
       });
 
+      if (!hasData) {
+        canvas.parentElement.innerHTML = `
+          <div class="empty-state" style="padding:40px">
+            <div class="icon">📊</div>
+            <h3>Brak historii cen</h3>
+            <p>Poczekaj na kilka aktualizacji aby zobaczyć wykres.</p>
+          </div>`;
+        return;
+      }
+
+      // Calculate min/max for X axis
+      const now = new Date().getTime();
+      const xMin = cutoff ? cutoff.getTime() : undefined;
+      const xMax = now;
+
       if (chartInstance) chartInstance.destroy();
       chartInstance = new Chart(canvas, {
         type: 'line',
-        data: { labels, datasets },
+        data: { datasets },
         options: {
           responsive: true,
           maintainAspectRatio: true,
-          interaction: { mode: 'index', intersect: false },
+          interaction: { mode: 'nearest', intersect: false },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -1386,13 +1421,38 @@
               bodyColor: '#94a3b8',
               padding: 12,
               callbacks: {
+                title: ctx => {
+                  if (ctx.length === 0) return '';
+                  const d = new Date(ctx[0].parsed.x);
+                  return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    + ' ' + d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                },
                 label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? fmtPrice(ctx.parsed.y) : '—'}`
               }
             }
           },
           scales: {
-            x: { grid: { color: '#1f2d45' }, ticks: { color: '#64748b', font: { size: 11 }, maxTicksLimit: 8 } },
+            x: {
+              type: 'linear',
+              min: xMin,
+              max: xMax,
+              grid: { color: '#1f2d45' },
+              ticks: {
+                color: '#64748b',
+                font: { size: 11 },
+                maxTicksLimit: 8,
+                callback: function (val) {
+                  const d = new Date(val);
+                  if (chartPeriod != null && chartPeriod <= 1) {
+                    return d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                  }
+                  return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })
+                    + ' ' + d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                }
+              }
+            },
             y: {
+              beginAtZero: false,
               grid: { color: '#1f2d45' },
               ticks: {
                 color: '#64748b', font: { size: 11 },
@@ -1630,7 +1690,7 @@
       document.getElementById('searchCount').textContent = '';
 
       try {
-        const resp = await fetch(`${API}/api/search?q=${encodeURIComponent(q)}`);
+        const resp = await fetch(`${API}/api/search?q=${encodeURIComponent(q)}&region=${document.getElementById('searchRegion').value}`);
         const data = await resp.json();
 
         if (!data.results || data.results.length === 0) {

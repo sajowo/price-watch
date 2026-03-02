@@ -92,7 +92,7 @@
       {
         "url": "https://www.morele.net/karta-graficzna-msi-geforce-rtx-5060-ventus-2x-oc-8gb-gddr7-dlss4-15233914/",
         "name": "Karty graficzne RTX 5060 - Sklep, Opinie, Ceny w Morele.net",
-        "parser": "generic"
+        "parser": "playwright_generic"
       },
       {
         "url": "https://www.mediaexpert.pl/komputery-i-tablety/podzespoly-komputerowe/karty-graficzne/karta-graficzna-asus-dual-geforce-rtx-5060-oc-edition-8gb-dlss-4",
@@ -135,6 +135,39 @@
       {
         "url": "https://www.neonet.pl/monitory/iiyama-g-master-gb2471hs-b1-red-eagle.html",
         "name": "Monitor IIYAMA G-Master GB2471HS-B1 Red Eagle - Neonet",
+        "parser": "playwright_generic"
+      }
+    ]
+  },
+  {
+    "id": "lg-ultragear-27gx704a-b",
+    "name": "LG UltraGear 27GX704A-B",
+    "sku_hint": "",
+    "created": "2026-03-02T08:51:24.687344+00:00",
+    "sites": [
+      {
+        "url": "https://www.x-kom.pl/p/1372977-monitor-led-27-265-284-lg-ultragear-27gx704a-b-oled.html",
+        "name": "LG UltraGear 27GX704A-B OLED - Monitor LED 27\" (26,5\"-28,4 ... - x-kom.pl",
+        "parser": "playwright_generic"
+      },
+      {
+        "url": "https://www.mediaexpert.pl/komputery-i-tablety/monitory-led/monitor-lg-ultragear-27gx704a-b-aeu-26-5-2560x1440px-240hz-0-03-gtg",
+        "name": "Monitor LG UltraGear 27GX704A-B.AEU 26.5\" 2560x1440px 240Hz 0.03 [GTG]",
+        "parser": "playwright_generic"
+      },
+      {
+        "url": "https://www.morele.net/monitor-lg-ultragear-oled-27gx704a-b-15596908/",
+        "name": "LG UltraGear OLED 27GX704A-B - Monitor - Morele.net",
+        "parser": "playwright_generic"
+      },
+      {
+        "url": "https://www.komputronik.pl/product/982617/monitor-lg-ultragear-27gx704a-b-240hz-qhd-oled-0-03ms-27-.html",
+        "name": "LG UltraGear 27GX704A-B - 240Hz | QHD | OLED | 0.03ms | 27''",
+        "parser": "generic"
+      },
+      {
+        "url": "https://www.skapiec.pl/site/cat/12/comp/955564048",
+        "name": "LG UltraGear 27GX704A-B 27\" OLED - Ceny i opinie na Skapiec.pl",
         "parser": "playwright_generic"
       }
     ]

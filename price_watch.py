@@ -129,7 +129,7 @@ def extract_price_from_text(text: str) -> float | None:
     matches = _PRICE_RE.findall(text)
     for m in matches:
         p = parse_price(m)
-        if p and p > 100:  # filtruj śmieci
+        if p and 100 < p < 500_000:  # filtruj śmieci i timestampy
             return p
     return None
 
@@ -319,9 +319,11 @@ def _extract_jsonld_product(soup: BeautifulSoup) -> list[dict]:
     return results
 
 
-def _parse_jsonld_offers(products: list[dict]) -> tuple[float | None, str, bool]:
+def _parse_jsonld_offers(products: list[dict], sku_hint: str = "") -> tuple[float | None, str, bool]:
     """
-    Szuka oferty dla wariantu 176 w JSON-LD.
+    Szuka najlepszej oferty w JSON-LD.
+    Jeśli sku_hint podany, preferuje ofertę z pasującym SKU/wariantem.
+    W przeciwnym razie bierze najtańszą dostępną ofertę.
     Zwraca (cena, dostępność, variant_confirmed).
     """
     availability_map = {
@@ -335,31 +337,50 @@ def _parse_jsonld_offers(products: list[dict]) -> tuple[float | None, str, bool]
         "PreOrder": "out_of_stock",
     }
 
+    best_price = None
+    best_avail = "unknown"
+    best_variant = False
+
     for product in products:
+        # Try price directly on product object
+        product_price = parse_price(str(product.get("price", "")))
+
         offers = product.get("offers", [])
         if isinstance(offers, dict):
             offers = [offers]
 
-        # Szukaj oferty z wariantem 176
-        for offer in offers:
-            offer_name = str(offer.get("name", ""))
-            offer_sku = str(offer.get("sku", ""))
-            # Sprawdź czy oferta dotyczy wariantu 176
-            if TARGET_LENGTH in offer_name or TARGET_LENGTH in offer_sku:
-                price = parse_price(str(offer.get("price", "")))
-                avail_raw = offer.get("availability", "")
-                avail = availability_map.get(avail_raw, "unknown")
-                return price, avail, True
+        if not offers and product_price:
+            avail_raw = product.get("availability", "")
+            avail = availability_map.get(avail_raw, "unknown")
+            return product_price, avail, False
 
-        # Jeśli tylko jedna oferta (bez wariantów), weź ją
-        if len(offers) == 1:
-            offer = offers[0]
+        # If sku_hint is set, first look for matching variant
+        if sku_hint:
+            for offer in offers:
+                offer_name = str(offer.get("name", ""))
+                offer_sku = str(offer.get("sku", ""))
+                offer_desc = str(offer.get("description", ""))
+                combined = f"{offer_name} {offer_sku} {offer_desc}".upper()
+                if sku_hint.upper() in combined:
+                    price = parse_price(str(offer.get("price", "")))
+                    avail_raw = offer.get("availability", "")
+                    avail = availability_map.get(avail_raw, "unknown")
+                    if price and 1 < price < 500_000:
+                        return price, avail, True
+
+        # Take the cheapest available offer (or any offer if only one)
+        for offer in offers:
             price = parse_price(str(offer.get("price", "")))
+            if not price or price < 1 or price > 500_000:
+                continue
             avail_raw = offer.get("availability", "")
             avail = availability_map.get(avail_raw, "unknown")
-            return price, avail, False  # variant_confirmed=False – nie wiemy czy to 176
+            if best_price is None or price < best_price:
+                best_price = price
+                best_avail = avail
+                best_variant = False
 
-    return None, "unknown", False
+    return best_price, best_avail, best_variant
 
 
 def _parse_meta_price(soup: BeautifulSoup) -> float | None:
@@ -406,7 +427,7 @@ def parse_intersport(site: dict, session: requests.Session) -> ScrapeResult:
     # 1. Próba JSON-LD
     products = _extract_jsonld_product(soup)
     if products:
-        price, avail, variant_confirmed = _parse_jsonld_offers(products)
+        price, avail, variant_confirmed = _parse_jsonld_offers(products, sku_hint)
         if price:
             result.price = price
             result.availability = avail
@@ -485,7 +506,7 @@ def parse_generic(site: dict, session: requests.Session) -> ScrapeResult:
     # JSON-LD
     products = _extract_jsonld_product(soup)
     if products:
-        price, avail, variant_confirmed = _parse_jsonld_offers(products)
+        price, avail, variant_confirmed = _parse_jsonld_offers(products, sku_hint)
         if price:
             result.price = price
             result.availability = avail
@@ -539,7 +560,7 @@ def parse_skiracecenter(site: dict, session: requests.Session) -> ScrapeResult:
     # 1. JSON-LD
     products = _extract_jsonld_product(soup)
     if products:
-        price, avail, variant_confirmed = _parse_jsonld_offers(products)
+        price, avail, variant_confirmed = _parse_jsonld_offers(products, sku_hint)
         if price:
             result.price = price
             result.availability = avail
@@ -625,7 +646,7 @@ def parse_allegro(site: dict, session: requests.Session) -> ScrapeResult:
     # JSON-LD (Allegro czasem wstrzykuje w SSR)
     products = _extract_jsonld_product(soup)
     if products:
-        price, avail, variant_confirmed = _parse_jsonld_offers(products)
+        price, avail, variant_confirmed = _parse_jsonld_offers(products, sku_hint)
         if price:
             result.price = price
             result.availability = avail
@@ -705,7 +726,7 @@ def parse_ceneo(site: dict, session: requests.Session) -> ScrapeResult:
     # JSON-LD
     products = _extract_jsonld_product(soup)
     if products:
-        price, avail, variant_confirmed = _parse_jsonld_offers(products)
+        price, avail, variant_confirmed = _parse_jsonld_offers(products, sku_hint)
         if price:
             result.price = price
             result.availability = avail
@@ -823,7 +844,7 @@ def parse_playwright_generic(site: dict, session: requests.Session) -> ScrapeRes
     # 1. JSON-LD
     products = _extract_jsonld_product(soup)
     if products:
-        price, avail, variant_confirmed = _parse_jsonld_offers(products)
+        price, avail, variant_confirmed = _parse_jsonld_offers(products, sku_hint)
         if price:
             result.price = price
             result.availability = avail

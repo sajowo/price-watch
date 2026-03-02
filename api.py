@@ -102,14 +102,27 @@ def make_id(name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def search_duckduckgo(query: str, max_results: int = 15) -> list[dict]:
+REGION_KEYWORDS = {
+    "pl-pl": "kup cena sklep",
+    "de-de": "kaufen preis shop",
+    "gb-en": "buy price shop",
+    "us-en": "buy price shop",
+    "fr-fr": "acheter prix boutique",
+    "es-es": "comprar precio tienda",
+    "cz-cs": "koupit cena obchod",
+    "": "buy price shop",
+}
+
+def search_duckduckgo(query: str, max_results: int = 15, region: str = "pl-pl") -> list[dict]:
     """
     Search DuckDuckGo for shopping results.
     Returns list of {title, url, snippet}.
     """
-    search_query = f"{query} kup cena sklep"
+    keywords = REGION_KEYWORDS.get(region, "buy price shop")
+    search_query = f"{query} {keywords}"
     encoded = urllib.parse.quote_plus(search_query)
-    url = f"https://html.duckduckgo.com/html/?q={encoded}"
+    region_param = f"&kl={region}" if region else ""
+    url = f"https://html.duckduckgo.com/html/?q={encoded}{region_param}"
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -488,8 +501,12 @@ class APIHandler(SimpleHTTPRequestHandler):
             self._send_json({"error": "Zapytanie za krótkie"}, 400)
             return
 
-        results = search_duckduckgo(query)
-        self._send_json({"query": query, "results": results})
+        # Parse region from query string
+        params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        region = params.get("region", ["pl-pl"])[0]
+
+        results = search_duckduckgo(query, region=region)
+        self._send_json({"query": query, "region": region, "results": results})
 
     def _api_check(self):
         """Run price_watch.py in background."""
@@ -576,6 +593,7 @@ def _guess_parser(url: str) -> str:
         return "ceneo"
     PLAYWRIGHT_DOMAINS = [
         "x-kom", "mediaexpert", "neonet", "intersport", "8a.pl", "allegro",
+        "euro.com", "skapiec", "mediamarkt", "morele", "lg.com",
     ]
     if any(shop in domain for shop in PLAYWRIGHT_DOMAINS):
         return "playwright_generic"
