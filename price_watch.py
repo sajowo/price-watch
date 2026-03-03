@@ -134,6 +134,48 @@ def extract_price_from_text(text: str) -> float | None:
     return None
 
 
+# Wzorce ścieżek URL charakterystyczne dla stron kategorii/listingów (nie produktów)
+_CATEGORY_PATH_RE = re.compile(
+    r"/(?:brand|category|kategoria|seria_|kolekcja|collection|search|szukaj|tag/|sklep/?$"
+    r"|c/\d+|cat/\d+|g/\d|s/\d)",
+    re.IGNORECASE,
+)
+
+
+def _is_category_url(url: str) -> bool:
+    """
+    Zwraca True jeśli URL wygląda jak strona kategorii/listingu (nie konkretnego produktu).
+    Zapobiega pobieraniu błędnych cen ze stron z wieloma produktami.
+    """
+    parsed = urlparse(url)
+    path = parsed.path.lower()
+    domain = parsed.netloc.lower()
+
+    # MediaMarkt: produkty = /pl/product/..., kategorie = /pl/brand/... lub /pl/category/...
+    if "mediamarkt" in domain:
+        if re.search(r"/p[l]?/(?:brand|category|promotion|search)", path):
+            return True
+        if not re.search(r"/product/", path):
+            # brak /product/ w ścieżce to prawdopodobnie kategoria
+            return True
+
+    # MediaExpert: série-listing = ścieżka kończąca się na /seria_xxx
+    if "mediaexpert" in domain:
+        if re.search(r"/seria_[a-z]|/apple-watch/?$|/smartwatche-i-zegarki/?$", path):
+            return True
+
+    # x-kom: produkty = /p/NUMER-..., kategorie = /g/... lub /s/...
+    if "x-kom" in domain:
+        if re.search(r"/[gs]/", path) and not re.search(r"/p/\d+", path):
+            return True
+
+    # Ogólny wzorzec (pasuje do wielu sklepów)
+    if _CATEGORY_PATH_RE.search(path):
+        return True
+
+    return False
+
+
 # ---------------------------------------------------------------------------
 # HTTP helper z retry
 # ---------------------------------------------------------------------------
@@ -298,24 +340,41 @@ def parse_shopify(site: dict, session: requests.Session) -> ScrapeResult:
 
 
 def _extract_jsonld_product(soup: BeautifulSoup) -> list[dict]:
-    """Zwraca listę obiektów JSON-LD typu Product ze strony."""
+    """Zwraca listę obiektów JSON-LD typu Product ze strony.
+
+    Obsługuje:
+      - bezpośredni obiekt @type=Product
+      - @graph z węzłami Product
+      - zagnieżdżone Product w akcjach (BuyAction, SellAction, itp.)
+        np. MediaMarkt: { "@type": "BuyAction", "object": { "@type": "Product", ... } }
+    """
+    ACTION_TYPES = {"BuyAction", "SellAction", "OrderAction", "TradeAction", "ConsumeAction"}
+    NESTED_KEYS = ("object", "item", "result")
+
     results = []
     for tag in soup.find_all("script", type="application/ld+json"):
         try:
             data = json.loads(tag.string or "")
         except Exception:
             continue
-        if isinstance(data, list):
-            for item in data:
-                if isinstance(item, dict) and item.get("@type") == "Product":
-                    results.append(item)
-        elif isinstance(data, dict):
-            if data.get("@type") == "Product":
-                results.append(data)
+
+        nodes = data if isinstance(data, list) else [data]
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            node_type = node.get("@type", "")
+            if node_type == "Product":
+                results.append(node)
+            elif node_type in ACTION_TYPES:
+                # MediaMarkt pattern: BuyAction wraps Product under "object"
+                for key in NESTED_KEYS:
+                    nested = node.get(key)
+                    if isinstance(nested, dict) and nested.get("@type") == "Product":
+                        results.append(nested)
             # Obsługa @graph
-            for node in data.get("@graph", []):
-                if isinstance(node, dict) and node.get("@type") == "Product":
-                    results.append(node)
+            for graph_node in node.get("@graph", []):
+                if isinstance(graph_node, dict) and graph_node.get("@type") == "Product":
+                    results.append(graph_node)
     return results
 
 
@@ -1029,6 +1088,18 @@ def detect_and_report_changes(
         price_changed = old_price is not None and new_price is not None and abs(old_price - new_price) > 0.01
         avail_changed = old_avail != new_avail and old_avail != "unknown" and new_avail != "unknown"
         is_new = r.url not in old_state
+
+        # Sanity check: if price jumped by >30%, likely a parser glitch
+        if price_changed and old_price and new_price:
+            pct_change = abs(new_price - old_price) / old_price
+            if pct_change > 0.30:
+                log.warning(
+                    "[%s] Podejrzana zmiana ceny: %s → %s (%.0f%%) – pomijam jako glitch parsera",
+                    r.name, _fmt_price(old_price), _fmt_price(new_price), pct_change * 100
+                )
+                # Keep old price in state instead of saving the glitched one
+                r.price = old_price
+                price_changed = False
 
         if r.error and not r.variant_confirmed and not r.sku_confirmed:
             log.info("[%s] Błąd/nieznany wariant – pomijam alert: %s", r.name, r.error)

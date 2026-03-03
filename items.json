@@ -171,5 +171,28 @@
         "parser": "playwright_generic"
       }
     ]
+  },
+  {
+    "id": "smartwatch-apple-watch-se-3-gps-koperta-40-mm",
+    "name": "Smartwatch APPLE Watch SE 3 GPS, koperta 40 mm",
+    "sku_hint": "",
+    "created": "2026-03-03T21:12:18.231064+00:00",
+    "sites": [
+      {
+        "url": "https://mediamarkt.pl/pl/product/_smartwatch-apple-watch-se-3-gps-koperta-40-mm-z-aluminium-w-kolorze-ksiezycowej-poswiaty-pasek-sportowy-w-kolorze-marynarskiego-granatu-rozmiar-sm-meh34mpa-1498059.html",
+        "name": "mediamarkt.pl",
+        "parser": "playwright_generic"
+      },
+      {
+        "url": "https://www.x-kom.pl/p/1362382-smartwatch-apple-watch-se-3-40-czarne-aluminum-czarny-pasek-m-l-gps.html",
+        "name": "Apple Watch SE 3 40/Czarne Aluminum/Czarny Pasek M/L GPS - Smartwatch ...",
+        "parser": "playwright_generic"
+      },
+      {
+        "url": "https://www.komputronik.pl/product/983230/zegarek-smartwatch-apple-watch-se-3-gps-40mm-midnight-aluminium-case-midnight-sport-band-m-l.html",
+        "name": "Apple Watch SE 3 GPS 40mm Midnight Aluminium Case - Komputronik",
+        "parser": "generic"
+      }
+    ]
   }
 ]
